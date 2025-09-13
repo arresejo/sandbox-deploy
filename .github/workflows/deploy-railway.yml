@@ -61,18 +61,12 @@ jobs:
           tar -xzf build/node-src.tar.gz -C build
           rm build/node-src.tar.gz
 
-      - name: Install jq (for JSON parsing)
-        run: sudo apt-get update && sudo apt-get install -y jq
-
       - name: Deploy to Railway (pin CLI via npx)
         working-directory: build
         env:
-          # IMPORTANT: this must be a **Project Token** scoped to the target project & environment
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           SERVICE_NAME: "aaa"
         run: |
-          RW="npx -y @railway/cli@4.8.0"
-          echo "Railway CLI version:"
-          $RW --version || $RW -v
+          npm install -g @railway/cli@4.8.0
           echo "Deploying to '${SERVICE_NAME}'…"
           railway up --service $SERVICE_NAME
