@@ -65,10 +65,32 @@ jobs:
       - name: Install Railway CLI
         run: npm i -g @railway/cli@3.18.0
 
-      - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Link project, ensure service, deploy
         working-directory: build
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}   # USER (Account) token
+          #RAILWAY_ENV: ${{ vars.RAILWAY_ENV }}          # optional, e.g. "production"
+          RAILWAY_ENV: "production"
+          #R_SERVICE: ${{ vars.RAILWAY_SERVICE }}        # optional override; defaults to "server"
         run: |
-          echo "RAILWAY_TOKEN => $RAILWAY_TOKEN"
-          railway up --service server
+          set -euo pipefail
+          SERVICE_NAME="${R_SERVICE:-server}"
+
+          echo "Linking to project 8973cade-aa26-4ab9-afb1-f6c8ba00df04…"
+          railway link --project 8973cade-aa26-4ab9-afb1-f6c8ba00df04
+
+          if [ -n "${RAILWAY_ENV:-}" ]; then
+            echo "Selecting environment: $RAILWAY_ENV"
+            railway use --environment "$RAILWAY_ENV"
+          fi
+
+          echo "Checking for service: $SERVICE_NAME"
+          if ! railway service list --json | jq -e --arg n "$SERVICE_NAME" '.services[] | select(.name==$n)' >/dev/null; then
+            echo "Service '$SERVICE_NAME' not found — creating it…"
+            railway service create "$SERVICE_NAME"
+          fi
+
+          echo "Deploying to service: $SERVICE_NAME"
+          railway up --service "$SERVICE_NAME" --yes
+
+          echo "Deployment done."
