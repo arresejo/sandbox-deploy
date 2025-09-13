@@ -68,6 +68,6 @@ jobs:
       - name: Deploy to Railway
         working-directory: build
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: "ef2bf221-8b8d-46b7-8d93-1b8fb4def9a0"
         run: |
           railway up --service server
