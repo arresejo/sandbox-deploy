@@ -73,7 +73,7 @@ jobs:
           R_SERVICE: ${{ vars.RAILWAY_SERVICE }}
         run: |
           set -euo pipefail
-          RW="npx -y @railway/cli@3.23.1"
+          RW="npx -y @railway/cli@4.8.0"
           SERVICE_NAME="${R_SERVICE:-server}"
   
           echo "Railway CLI version:"
