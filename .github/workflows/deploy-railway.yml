@@ -69,23 +69,5 @@ jobs:
         env:
           # IMPORTANT: this must be a **Project Token** scoped to the target project & environment
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          # Optional: override service name via repo variable
-          R_SERVICE: ${{ vars.RAILWAY_SERVICE }}
         run: |
-          set -euo pipefail
-          RW="npx -y @railway/cli@4.8.0"
-          SERVICE_NAME="${R_SERVICE:-server}"
-  
-          echo "Railway CLI version:"
-          $RW --version || $RW -v
-  
-          echo "Checking for service '${SERVICE_NAME}'…"
-          if ! $RW service list --json | jq -e --arg n "$SERVICE_NAME" '.services[] | select(.name==$n)' >/dev/null; then
-            echo "Service not found — creating '${SERVICE_NAME}'…"
-            $RW service create "$SERVICE_NAME"
-          else
-            echo "Service '${SERVICE_NAME}' exists."
-          fi
-  
-          echo "Deploying to '${SERVICE_NAME}'…"
-          $RW up --service "$SERVICE_NAME" --yes
+          railway up --service aaa
