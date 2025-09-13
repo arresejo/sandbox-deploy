@@ -62,7 +62,8 @@ jobs:
           rm build/node-src.tar.gz
 
       - name: Install Railway CLI
-        run: npm i -g @railway/cli@3.18.0
+        #run: npm i -g @railway/cli@3.18.0
+        run: npm i -g railway
 
       - name: Install jq (for JSON parsing)
         run: sudo apt-get update && sudo apt-get install -y jq
