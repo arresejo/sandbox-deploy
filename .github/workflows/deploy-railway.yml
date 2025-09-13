@@ -64,11 +64,11 @@ jobs:
       - name: Deploy to Railway (pin CLI via npx)
         working-directory: build
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: "76625412-b6ff-4768-9773-4cb2da0ca1c6"
           #RAILWAY_TOKEN:
           SERVICE_NAME: "aaa"
         run: |
           npm install -g @railway/cli@4.8.0
-          RAILWAY_API_TOKEN=76625412-b6ff-4768-9773-4cb2da0ca1c6 railway init -n "aaa"
+          railway init -n $SERVICE_NAME
           echo "Deploying to '${SERVICE_NAME}'…"
-          RAILWAY_API_TOKEN=76625412-b6ff-4768-9773-4cb2da0ca1c6 railway up --service $SERVICE_NAME
+          railway up --service $SERVICE_NAME
