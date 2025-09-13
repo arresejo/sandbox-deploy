@@ -20,7 +20,6 @@ jobs:
           node-version: "20.x"
           cache: "npm"
 
-      # If you don't have a lockfile, either add one or switch to `npm install`.
       - name: Install dependencies
         run: npm ci
 
@@ -65,9 +64,27 @@ jobs:
       - name: Install Railway CLI
         run: npm i -g @railway/cli@3.18.0
 
-      - name: Deploy to Railway
+      - name: Install jq (for JSON parsing)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Ensure service exists & deploy
         working-directory: build
         env:
+          # IMPORTANT: this must be a **Project Token** scoped to the target environment
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          # Optional: override service name via repo variable; defaults to "server"
+          R_SERVICE: ${{ vars.RAILWAY_SERVICE }}
         run: |
-          railway up --service server
+          set -euo pipefail
+          SERVICE_NAME="${R_SERVICE:-server}"
+
+          echo "Listing services in token-bound project/environment…"
+          if ! railway service list --json | jq -e --arg n "$SERVICE_NAME" '.services[] | select(.name==$n)' >/dev/null; then
+            echo "Service '$SERVICE_NAME' not found — creating it…"
+            railway service create "$SERVICE_NAME"
+          else
+            echo "Service '$SERVICE_NAME' exists."
+          fi
+
+          echo "Deploying to service: $SERVICE_NAME"
+          railway up --service "$SERVICE_NAME" --yes
