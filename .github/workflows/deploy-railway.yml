@@ -47,47 +47,47 @@ jobs:
           path: node-src.tar.gz
           retention-days: 1
 
-deploy:
-  needs: build
-  runs-on: ubuntu-latest
-  steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: node-src
-        path: build
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: node-src
+          path: build
 
-    - name: Extract artifact
-      run: |
-        tar -xzf build/node-src.tar.gz -C build
-        rm build/node-src.tar.gz
+      - name: Extract artifact
+        run: |
+          tar -xzf build/node-src.tar.gz -C build
+          rm build/node-src.tar.gz
 
-    - name: Install Railway CLI
-      run: npm i -g @railway/cli@3.18.0
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli@3.18.0
 
-    - name: Deploy to Railway (no link; explicit project/service)
-      working-directory: build
-      env:
-        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}    # MUST be an Account/User token
-        RAILWAY_ENV: ${{ vars.RAILWAY_ENV }}           # optional, e.g. "production"
-        R_SERVICE: ${{ vars.RAILWAY_SERVICE }}         # optional override; defaults to "server"
-      run: |
-        set -euo pipefail
-        PROJECT_ID="8973cade-aa26-4ab9-afb1-f6c8ba00df04"
-        SERVICE_NAME="${R_SERVICE:-server}"
-
-        # (Optional) select environment if provided
-        ENV_FLAG=""
-        if [ -n "${RAILWAY_ENV:-}" ]; then
-          ENV_FLAG="--environment ${RAILWAY_ENV}"
-        fi
-
-        echo "Ensuring service '${SERVICE_NAME}' exists in project ${PROJECT_ID}…"
-        if ! railway service list --project "$PROJECT_ID" --json | jq -e --arg n "$SERVICE_NAME" '.services[] | select(.name==$n)' >/dev/null; then
-          railway service create "$SERVICE_NAME" --project "$PROJECT_ID"
-        fi
-
-        echo "Deploying to project=${PROJECT_ID} service=${SERVICE_NAME}…"
-        railway up --project "$PROJECT_ID" --service "$SERVICE_NAME" $ENV_FLAG --yes
-
-        echo "Deployment complete."
+      - name: Deploy to Railway (no link; explicit project/service)
+        working-directory: build
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}    # MUST be an Account/User token
+          RAILWAY_ENV: ${{ vars.RAILWAY_ENV }}           # optional, e.g. "production"
+          R_SERVICE: ${{ vars.RAILWAY_SERVICE }}         # optional override; defaults to "server"
+        run: |
+          set -euo pipefail
+          PROJECT_ID="8973cade-aa26-4ab9-afb1-f6c8ba00df04"
+          SERVICE_NAME="${R_SERVICE:-server}"
+  
+          # (Optional) select environment if provided
+          ENV_FLAG=""
+          if [ -n "${RAILWAY_ENV:-}" ]; then
+            ENV_FLAG="--environment ${RAILWAY_ENV}"
+          fi
+  
+          echo "Ensuring service '${SERVICE_NAME}' exists in project ${PROJECT_ID}…"
+          if ! railway service list --project "$PROJECT_ID" --json | jq -e --arg n "$SERVICE_NAME" '.services[] | select(.name==$n)' >/dev/null; then
+            railway service create "$SERVICE_NAME" --project "$PROJECT_ID"
+          fi
+  
+          echo "Deploying to project=${PROJECT_ID} service=${SERVICE_NAME}…"
+          railway up --project "$PROJECT_ID" --service "$SERVICE_NAME" $ENV_FLAG --yes
+  
+          echo "Deployment complete."
