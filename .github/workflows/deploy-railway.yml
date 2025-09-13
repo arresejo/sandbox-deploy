@@ -1,36 +1,92 @@
-deploy:
-  needs: build
-  runs-on: ubuntu-latest
-  steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: node-src
-        path: build
+name: Build and Deploy (Railway - Node/Express)
 
-    - name: Extract artifact
-      run: |
-        tar -xzf build/node-src.tar.gz -C build
-        rm build/node-src.tar.gz
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-    - name: Install Railway CLI
-      run: npm i -g @railway/cli@3.18.0
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_name: node-src
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Authenticate with Railway
-      env:
-        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      run: railway login --token $RAILWAY_TOKEN
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
 
-    - name: Deploy to Railway
-      env:
-        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        R_SERVICE: ${{ vars.RAILWAY_SERVICE }}
-        R_ENV: ${{ vars.RAILWAY_ENV }}
-      working-directory: build
-      run: |
-        SERVICE_FLAG=""
-        ENV_FLAG=""
-        if [ -n "${R_SERVICE}" ]; then SERVICE_FLAG="--service ${R_SERVICE}"; fi
-        if [ -n "${R_ENV}" ]; then ENV_FLAG="--environment ${R_ENV}"; fi
+      # If you don't have a lockfile yet, run `npm i --package-lock-only` locally once.
+      - name: Install dependencies
+        run: npm ci
 
-        railway up $SERVICE_FLAG $ENV_FLAG
+      # Optional: keep, tweak, or remove as needed
+      - name: Run tests
+        run: |
+          if [ -f package.json ] && jq -e '.scripts.test' package.json >/dev/null; then
+            npm test --if-present
+          else
+            echo "No test script; skipping."
+          fi
+
+      # If you have a build step (TS → JS, etc.), keep this; otherwise it’s a no-op.
+      - name: Build (if applicable)
+        run: npm run build --if-present
+
+      - name: Archive source (tracked files only)
+        shell: bash
+        run: |
+          # Add extra paths you need into the archive (e.g. build output) by appending to the list.
+          git ls-files -z | tar --null -T - -czf node-src.tar.gz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-src
+          path: node-src.tar.gz
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: node-src
+          path: build
+
+      - name: Extract artifact
+        run: |
+          tar -xzf build/node-src.tar.gz -C build
+          rm build/node-src.tar.gz
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli@3.18.0
+
+      - name: Authenticate with Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway login --token "$RAILWAY_TOKEN"
+
+      # If your app binds to PORT from env (as Express sample does), Railway will handle it.
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          # Optional repo variables (Settings → Secrets and variables → Actions → Variables)
+          R_SERVICE: ${{ vars.RAILWAY_SERVICE }}
+          R_ENV: ${{ vars.RAILWAY_ENV }}
+        working-directory: build
+        run: |
+          # Choose flags only if provided; otherwise let CLI defaults resolve.
+          SERVICE_FLAG=""
+          ENV_FLAG=""
+          if [ -n "${R_SERVICE}" ]; then SERVICE_FLAG="--service ${R_SERVICE}"; fi
+          if [ -n "${R_ENV}" ]; then ENV_FLAG="--environment ${R_ENV}"; fi
+
+          # Deploy current directory (Nixpacks by default for Node)
+          railway up $SERVICE_FLAG $ENV_FLAG
