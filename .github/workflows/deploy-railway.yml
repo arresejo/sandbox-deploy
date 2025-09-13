@@ -61,31 +61,31 @@ jobs:
           tar -xzf build/node-src.tar.gz -C build
           rm build/node-src.tar.gz
 
-      - name: Install Railway CLI
-        #run: npm i -g @railway/cli@3.18.0
-        run: npm i -g railway
-
       - name: Install jq (for JSON parsing)
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Ensure service exists & deploy
+      - name: Deploy to Railway (pin CLI via npx)
         working-directory: build
         env:
-          # IMPORTANT: this must be a **Project Token** scoped to the target environment
+          # IMPORTANT: this must be a **Project Token** scoped to the target project & environment
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          # Optional: override service name via repo variable; defaults to "server"
+          # Optional: override service name via repo variable
           R_SERVICE: ${{ vars.RAILWAY_SERVICE }}
         run: |
           set -euo pipefail
+          RW="npx -y @railway/cli@3.23.1"
           SERVICE_NAME="${R_SERVICE:-server}"
-
-          echo "Listing services in token-bound project/environment…"
-          if ! railway service list --json | jq -e --arg n "$SERVICE_NAME" '.services[] | select(.name==$n)' >/dev/null; then
-            echo "Service '$SERVICE_NAME' not found — creating it…"
-            railway service create "$SERVICE_NAME"
+  
+          echo "Railway CLI version:"
+          $RW --version || $RW -v
+  
+          echo "Checking for service '${SERVICE_NAME}'…"
+          if ! $RW service list --json | jq -e --arg n "$SERVICE_NAME" '.services[] | select(.name==$n)' >/dev/null; then
+            echo "Service not found — creating '${SERVICE_NAME}'…"
+            $RW service create "$SERVICE_NAME"
           else
-            echo "Service '$SERVICE_NAME' exists."
+            echo "Service '${SERVICE_NAME}' exists."
           fi
-
-          echo "Deploying to service: $SERVICE_NAME"
-          railway up --service "$SERVICE_NAME" --yes
+  
+          echo "Deploying to '${SERVICE_NAME}'…"
+          $RW up --service "$SERVICE_NAME" --yes
