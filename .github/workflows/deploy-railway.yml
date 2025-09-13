@@ -69,5 +69,10 @@ jobs:
         env:
           # IMPORTANT: this must be a **Project Token** scoped to the target project & environment
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          SERVICE_NAME: "aaa"
         run: |
-          railway up --service aaa
+          RW="npx -y @railway/cli@4.8.0"
+          echo "Railway CLI version:"
+          $RW --version || $RW -v
+          echo "Deploying to '${SERVICE_NAME}'…"
+          railway up --service $SERVICE_NAME
