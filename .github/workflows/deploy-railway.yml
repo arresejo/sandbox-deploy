@@ -65,10 +65,9 @@ jobs:
       - name: Install Railway CLI
         run: npm i -g @railway/cli@3.18.0
 
-      # No 'railway login' here. The CLI reads RAILWAY_TOKEN directly.
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         working-directory: build
         run: |
-          RAILWAY_TOKEN=$RAILWAY_TOKEN railway up --service server
+          railway up --service server
