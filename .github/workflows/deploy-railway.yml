@@ -70,5 +70,4 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          # If you committed a .railway/ link, CLI knows the project
-          railway up --service server --yes
+          railway up --service server
