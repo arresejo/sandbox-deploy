@@ -65,8 +65,10 @@ jobs:
         working-directory: build
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          #RAILWAY_TOKEN:
           SERVICE_NAME: "aaa"
         run: |
           npm install -g @railway/cli@4.8.0
+          railway init -n "aaa"
           echo "Deploying to '${SERVICE_NAME}'…"
           railway up --service $SERVICE_NAME
