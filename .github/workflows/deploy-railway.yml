@@ -73,9 +73,6 @@ jobs:
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          # Optional variables; set in repo "Variables" if you like:
-          R_SERVICE: ${{ vars.RAILWAY_SERVICE }}
-          R_ENV: ${{ vars.RAILWAY_ENV }}
         working-directory: build
         run: |
           # Choose flags only if provided; otherwise let CLI defaults resolve.
