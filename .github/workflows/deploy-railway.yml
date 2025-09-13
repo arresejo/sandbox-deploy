@@ -71,4 +71,4 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         working-directory: build
         run: |
-          railway up --service server
+          RAILWAY_TOKEN=$RAILWAY_TOKEN railway up --service server
