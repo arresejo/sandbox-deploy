@@ -47,50 +47,47 @@ jobs:
           path: node-src.tar.gz
           retention-days: 1
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: node-src
-          path: build
+deploy:
+  needs: build
+  runs-on: ubuntu-latest
+  steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: node-src
+        path: build
 
-      - name: Extract artifact
-        run: |
-          tar -xzf build/node-src.tar.gz -C build
-          rm build/node-src.tar.gz
+    - name: Extract artifact
+      run: |
+        tar -xzf build/node-src.tar.gz -C build
+        rm build/node-src.tar.gz
 
-      - name: Install Railway CLI
-        run: npm i -g @railway/cli@3.18.0
+    - name: Install Railway CLI
+      run: npm i -g @railway/cli@3.18.0
 
-      - name: Link project, ensure service, deploy
-        working-directory: build
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}   # USER (Account) token
-          #RAILWAY_ENV: ${{ vars.RAILWAY_ENV }}          # optional, e.g. "production"
-          RAILWAY_ENV: "production"
-          #R_SERVICE: ${{ vars.RAILWAY_SERVICE }}        # optional override; defaults to "server"
-        run: |
-          set -euo pipefail
-          SERVICE_NAME="${R_SERVICE:-server}"
+    - name: Deploy to Railway (no link; explicit project/service)
+      working-directory: build
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}    # MUST be an Account/User token
+        RAILWAY_ENV: ${{ vars.RAILWAY_ENV }}           # optional, e.g. "production"
+        R_SERVICE: ${{ vars.RAILWAY_SERVICE }}         # optional override; defaults to "server"
+      run: |
+        set -euo pipefail
+        PROJECT_ID="8973cade-aa26-4ab9-afb1-f6c8ba00df04"
+        SERVICE_NAME="${R_SERVICE:-server}"
 
-          echo "Linking to project 8973cade-aa26-4ab9-afb1-f6c8ba00df04…"
-          railway link --project 8973cade-aa26-4ab9-afb1-f6c8ba00df04
+        # (Optional) select environment if provided
+        ENV_FLAG=""
+        if [ -n "${RAILWAY_ENV:-}" ]; then
+          ENV_FLAG="--environment ${RAILWAY_ENV}"
+        fi
 
-          if [ -n "${RAILWAY_ENV:-}" ]; then
-            echo "Selecting environment: $RAILWAY_ENV"
-            railway use --environment "$RAILWAY_ENV"
-          fi
+        echo "Ensuring service '${SERVICE_NAME}' exists in project ${PROJECT_ID}…"
+        if ! railway service list --project "$PROJECT_ID" --json | jq -e --arg n "$SERVICE_NAME" '.services[] | select(.name==$n)' >/dev/null; then
+          railway service create "$SERVICE_NAME" --project "$PROJECT_ID"
+        fi
 
-          echo "Checking for service: $SERVICE_NAME"
-          if ! railway service list --json | jq -e --arg n "$SERVICE_NAME" '.services[] | select(.name==$n)' >/dev/null; then
-            echo "Service '$SERVICE_NAME' not found — creating it…"
-            railway service create "$SERVICE_NAME"
-          fi
+        echo "Deploying to project=${PROJECT_ID} service=${SERVICE_NAME}…"
+        railway up --project "$PROJECT_ID" --service "$SERVICE_NAME" $ENV_FLAG --yes
 
-          echo "Deploying to service: $SERVICE_NAME"
-          railway up --service "$SERVICE_NAME" --yes
-
-          echo "Deployment done."
+        echo "Deployment complete."
