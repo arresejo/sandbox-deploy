@@ -69,6 +69,6 @@ jobs:
           SERVICE_NAME: "aaa"
         run: |
           npm install -g @railway/cli@4.8.0
-          railway init -n "aaa"
+          RAILWAY_API_TOKEN=76625412-b6ff-4768-9773-4cb2da0ca1c6 railway init -n "aaa"
           echo "Deploying to '${SERVICE_NAME}'…"
-          railway up --service $SERVICE_NAME
+          RAILWAY_API_TOKEN=76625412-b6ff-4768-9773-4cb2da0ca1c6 railway up --service $SERVICE_NAME
