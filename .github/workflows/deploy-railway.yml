@@ -68,10 +68,12 @@ jobs:
       - name: Select project/service/env (non-interactive)
         working-directory: build
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}        # Account/User token
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }} # Required
         run: |
           # Tell the CLI which project this directory is linked to
-          railway link --project $RAILWAY_PROJECT_ID
+          #railway link --project $RAILWAY_PROJECT_ID
+          railway link --project 8973cade-aa26-4ab9-afb1-f6c8ba00df04
 
           # Pin environment/service if provided
           if [ -n "${RAILWAY_ENV}" ]; then
